@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <title>Tzarina Paula S. | Digital Multimedia Artist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: 'var(--color-accent)',
+              paper: 'var(--color-bg-creative)',
+              logic: 'var(--color-bg-logic)'
+            },
+            fontFamily: {
+              heading: ['var(--font-heading)', 'system-ui'],
+              body: ['var(--font-body)', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --color-bg-creative: #f4f1ea; 
+        --color-bg-logic: #f9f9f9;    
+        --color-text: #1c1917; 
+        --color-accent: #fa8c96;
+        --font-heading: 'Chewy', system-ui;
+        --font-body: 'Poppins', sans-serif;
+      }
+
+      /* Cursor is only hidden if the custom-cursor-enabled class is present on body */
+      body.custom-cursor-enabled, 
+      body.custom-cursor-enabled a, 
+      body.custom-cursor-enabled button, 
+      body.custom-cursor-enabled [role="button"], 
+      body.custom-cursor-enabled .cursor-pointer {
+        cursor: none !important;
+      }
+
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: var(--color-bg-creative); }
+      ::-webkit-scrollbar-thumb { background: #d6d3cd; border-radius: 10px; }
+
+      .bg-paper {
+        background-color: var(--color-bg-creative);
+        color: var(--color-text);
+        position: relative;
+      }
+      
+      .bg-paper::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        opacity: 0.04;
+        pointer-events: none;
+        z-index: 1;
+        background-image: url("https://www.transparenttextures.com/patterns/felt-paper.png");
+      }
+
+      .font-heading { 
+        font-family: var(--font-heading); 
+        letter-spacing: 0.02em; 
+      }
+      .font-body { 
+        font-family: var(--font-body); 
+        line-height: 1.6;
+        letter-spacing: 0.01em;
+      }
+      
+      /* Responsive Typography using Clamp */
+      .text-hero { 
+        font-size: clamp(3rem, 12vw, 9rem); 
+        line-height: 0.95; 
+      }
+      .text-section-title { 
+        font-size: clamp(2.5rem, 8vw, 5.5rem); 
+        line-height: 1.1; 
+      }
+
+      .section-padding { padding-top: 6rem; padding-bottom: 6rem; }
+      @media (min-width: 768px) { .section-padding { padding-top: 9rem; padding-bottom: 9rem; } }
+      
+      .container-max { max-width: 80rem; margin-left: auto; margin-right: auto; padding-left: 1.5rem; padding-right: 1.5rem; }
+      @media (min-width: 768px) { .container-max { padding-left: 3rem; padding-right: 3rem; } }
+
+      .card-radius { border-radius: 2.25rem; }
+      .logic-mode .card-radius { border-radius: 0; }
+      
+      .vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 50;
+        background: radial-gradient(circle, transparent 75%, rgba(0, 0, 0, 0.06) 100%);
+      }
+
+      /* Aura Blob Animations */
+      @keyframes float-aura {
+        0% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(10%, 15%) scale(1.1); }
+        66% { transform: translate(-15%, 5%) scale(0.9); }
+        100% { transform: translate(0, 0) scale(1); }
+      }
+
+      .aura-blob {
+        position: absolute;
+        filter: blur(80px);
+        opacity: 0.4;
+        border-radius: 50%;
+        z-index: 0;
+        pointer-events: none;
+        mix-blend-mode: multiply;
+        animation: float-aura 20s infinite ease-in-out;
+      }
+
+      .logic-mode .aura-blob { display: none; }
+
+      @keyframes scanline {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+      }
+
+      .logo-scan {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .logic-mode .logo-scan::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--color-accent);
+        box-shadow: 0 0 10px var(--color-accent);
+        animation: scanline 2s linear infinite;
+        opacity: 0.8;
+      }
+
+      @keyframes float-xp {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-60px); opacity: 0; }
+      }
+      .xp-pop {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        font-weight: 800;
+        font-size: 11px;
+        color: var(--color-accent);
+        font-family: var(--font-body);
+        animation: float-xp 1s forwards cubic-bezier(0.16, 1, 0.3, 1);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "gsap": "https://esm.sh/gsap@^3.12.5",
+    "gsap/ScrollTrigger": "https://esm.sh/gsap@^3.12.5/ScrollTrigger",
+    "next/": "https://esm.sh/next@^16.1.6/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.95.3",
+    "gsap/": "https://esm.sh/gsap@^3.14.2/"
+  }
+}
+</script>
+</head>
+  <body class="bg-paper text-stone-900 font-body antialiased selection:bg-accent selection:text-white overflow-x-hidden">
+    <div id="root"></div>
+  </body>
+</html>

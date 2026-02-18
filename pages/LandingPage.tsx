@@ -1,81 +1,124 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { HeroSection } from '../components/HeroSection';
 import { BioSection } from '../components/BioSection';
 import { PortfolioSection } from '../components/PortfolioSection';
 import { TestimonialSection } from '../components/TestimonialSection';
 import { JournalSection } from '../components/JournalSection';
+import { ContactSection } from '../components/ContactSection';
 import { BongoCatLoader } from '../components/BongoCatLoader';
 import { portfolioService } from '../services/supabaseService';
 import { PortfolioItem } from '../types';
-import { ContactSection } from '../components/ContactSection';
 import { useConfig } from '../contexts/ConfigContext';
 
-export const LandingPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
+export interface SiteModule {
+  id: string;
+  label: string;
+  Component: React.FC<any>;
+  showInMenu: boolean;
+  props?: any;
+}
+
+export const LandingPage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { gameState } = useConfig();
 
   useEffect(() => {
-    portfolioService.getAll().then(setItems).finally(() => {
-        setTimeout(() => {
-            setLoading(false);
-            // Check for hash and scroll to it after loading
-            if (window.location.hash) {
-                const id = window.location.hash.replace('#', '');
-                setTimeout(() => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        const offset = 100;
-                        const bodyRect = document.body.getBoundingClientRect().top;
-                        const elementRect = el.getBoundingClientRect().top;
-                        const elementPosition = elementRect - bodyRect;
-                        const offsetPosition = elementPosition - offset;
-                        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
-                    }
-                }, 500); // Allow DOM to settle
-            }
-        }, 2000);
-    });
+    portfolioService.getAll()
+      .then(setItems)
+      .finally(() => {
+        setTimeout(() => setLoading(false), 1200);
+      });
   }, []);
+
+  // --- MODULAR SECTION REGISTRY ---
+  const SECTION_CONFIG: SiteModule[] = useMemo(() => [
+    { 
+      id: 'hero-section', 
+      label: 'Home', 
+      Component: HeroSection, 
+      showInMenu: false,
+      props: { onNavigate }
+    },
+    { 
+      id: 'portfolio-section', 
+      label: 'Works', 
+      Component: PortfolioSection, 
+      showInMenu: true,
+      props: { items }
+    },
+    { 
+      id: 'bio-section', 
+      label: 'Identity', 
+      Component: BioSection, 
+      showInMenu: true 
+    },
+    { 
+      id: 'testimonial-section', 
+      label: 'Testimonials', 
+      Component: TestimonialSection, 
+      showInMenu: false 
+    },
+    { 
+      id: 'journal-section', 
+      label: 'Journal', 
+      Component: JournalSection, 
+      showInMenu: true,
+      props: { onNavigate }
+    },
+    { 
+      id: 'contact-section', 
+      label: 'Connect', 
+      Component: ContactSection, 
+      showInMenu: true 
+    }
+  ], [items, onNavigate]);
+
+  // Handle hash scrolling
+  useEffect(() => {
+    const handleHashScroll = () => {
+      if (loading) return;
+
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        // Delay slightly for render stabilization
+        setTimeout(() => {
+          const element = document.getElementById(hash);
+          if (element) {
+            const offset = 100;
+            const bodyRect = document.body.getBoundingClientRect().top;
+            const elementRect = element.getBoundingClientRect().top;
+            const elementPosition = elementRect - bodyRect;
+            const offsetPosition = elementPosition - offset;
+            
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+          }
+        }, 100);
+      }
+    };
+
+    handleHashScroll();
+    window.addEventListener('hashchange', handleHashScroll);
+    return () => window.removeEventListener('hashchange', handleHashScroll);
+  }, [loading]);
 
   if (loading) return <BongoCatLoader />;
 
   return (
-    // Flexbox Architecture: Forces natural document flow vertical stacking
-    // This prevents margin collapsing issues that can confuse GSAP
-    <div className={`flex flex-col w-full relative min-h-screen ${gameState.mode === 'logic' ? 'gap-0' : 'gap-0'}`}>
-      
-      {/* 01. HERO - Order 1 */}
-      <div className="flex-none z-10">
-        <HeroSection onNavigate={onNavigate} />
-      </div>
-
-      {/* 02. PORTFOLIO - Order 2 (Dynamic Height) */}
-      {/* z-20 ensures that if the Bio section pins underneath, this stays cleanly above or pushes it down */}
-      <div className="flex-auto relative z-20 bg-paper">
-        <PortfolioSection items={items} />
-      </div>
-
-      {/* 03. BIO - Order 3 (Pinned) */}
-      {/* z-30 allows the pinning effect to layer correctly over the subsequent content but respect the portfolio flow */}
-      <div className="flex-none relative z-30">
-        <BioSection />
-      </div>
-
-      {/* 04. STORIES - Removed for now */}
-      
-      {/* 05. SOCIAL / TRUST - Order 5 */}
-      <div className="flex-none relative z-50 bg-paper border-t border-stone-200/50">
-        <TestimonialSection />
-        <JournalSection onNavigate={onNavigate!} />
-      </div>
-
-      {/* 06. CONTACT - Order 6 */}
-      <div className="flex-none relative z-50 border-t border-stone-200/50 bg-paper">
-        <ContactSection />
-      </div>
-
+    <div className={`modular-container w-full min-h-screen ${gameState.mode === 'logic' ? 'logic-layout' : 'creative-layout'}`}>
+      {SECTION_CONFIG.map(({ id, Component, props }) => (
+        <section 
+          key={id} 
+          id={id} 
+          className="w-full relative overflow-hidden"
+        >
+          <Component {...(props || {})} />
+        </section>
+      ))}
     </div>
   );
 };

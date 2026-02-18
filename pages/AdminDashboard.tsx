@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { authService, portfolioService, blogService, configService, testimonialService, voucherService } from '../services/supabaseService';
+import { authService, portfolioService, blogService, configService, testimonialService, voucherService, contactService } from '../services/supabaseService';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { performSmartSearch, SmartSortOption } from '../services/smartSearchService';
-import { ragService } from '../services/ragService';
 import { useConfig } from '../contexts/ConfigContext';
 import { useToast } from '../contexts/ToastContext';
 import { 
@@ -12,9 +11,8 @@ import {
     ArrowDown, Minus, Crown, Video as VideoIcon, Smartphone, Wand2, Loader2, Cpu, BarChart3, 
     Fingerprint, Upload, Bot, Tag as TagIcon, MapPin, Calendar, Link as LinkIcon, User, Menu, 
     ShieldAlert, Shield, BookOpen, Star, Copy, Check, Ticket, Gamepad2, Sparkles, Film, ExternalLink, 
-    CheckCircle2
+    CheckCircle2, Mail, Database, AlertCircle, Activity
 } from 'lucide-react';
-// Fixed: Added Testimonial and Voucher to imports
 import { PortfolioItem, BlogPost, SiteConfig, PortfolioCategory, MediaType, Testimonial, Voucher } from '../types';
 import { BongoCatLoader } from '../components/BongoCatLoader';
 import { DEFAULT_CONFIG } from '../constants';
@@ -24,7 +22,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
-  const { config, updateConfig, resetConfig, isLoading: isConfigLoading } = useConfig();
+  const { config, updateConfig, isLoading: isConfigLoading } = useConfig();
   const { showToast } = useToast();
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -43,7 +41,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [submissionsCount, setSubmissionsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [diagStatus, setDiagStatus] = useState({ db: 'checking', mail: 'checking' });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SmartSortOption>('dateUploaded');
@@ -57,12 +57,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
   const [portfolioTagsInput, setPortfolioTagsInput] = useState('');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [toolsInput, setToolsInput] = useState('');
-
-  const [newPost, setNewPost] = useState<Partial<BlogPost>>({
-    title: '', slug: '', excerpt: '', content: '', coverImage: '', tags: [], geoTag: '', publishedAt: getTodayDate()
-  });
-  const [blogTagsInput, setBlogTagsInput] = useState('');
-  const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
   const [tempConfig, setTempConfig] = useState<SiteConfig>(config);
 
@@ -82,17 +76,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     if (!isAuthenticated) return;
     setIsLoading(true);
     try {
-      const [items, blogs, tests, vchs] = await Promise.all([ 
+      const [items, blogs, tests, vchs, subs] = await Promise.all([ 
         portfolioService.getAll(), 
         blogService.getAll(),
         testimonialService.getAdminAll(),
-        voucherService.getAll()
+        voucherService.getAll(),
+        contactService.getTodayCount()
       ]);
       setExistingItems(items);
       setBlogPosts(blogs);
       setTestimonials(tests);
       setVouchers(vchs);
-    } catch (err) { showToast("Sync failed", "error"); } finally { setIsLoading(false); }
+      setSubmissionsCount(subs);
+      
+      setDiagStatus({
+          db: 'online',
+          mail: (config.contact.formspreeId && !config.contact.formspreeId.includes("ADD_YOUR")) ? 'configured' : 'missing'
+      });
+    } catch (err) { 
+        showToast("Sync failed", "error");
+        setDiagStatus(prev => ({ ...prev, db: 'offline' }));
+    } finally { setIsLoading(false); }
   };
 
   useEffect(() => { fetchData(); }, [isAuthenticated]);
@@ -114,6 +118,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       try {
           await updateConfig(tempConfig);
           showToast("System Configuration Updated", "success");
+          setDiagStatus(prev => ({
+              ...prev,
+              mail: (tempConfig.contact.formspreeId && !tempConfig.contact.formspreeId.includes("ADD_YOUR")) ? 'configured' : 'missing'
+          }));
       } catch(e) {
           showToast("Failed to save config", "error");
       } finally {
@@ -142,8 +150,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         
         if (target === 'portfolio') {
             setNewItem(prev => ({ ...prev, [field]: url }));
-        } else if (target === 'blog') {
-            setNewPost(prev => ({ ...prev, [field]: url }));
         } else if (target === 'config') {
             const parts = field.split('.');
             if (parts.length === 2) {
@@ -192,29 +198,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
     finally { setIsLoading(false); }
   };
 
-  const startEditingItem = (item: PortfolioItem) => {
-      setEditingItemId(item.id);
-      setNewItem({ ...item });
-      setPortfolioTagsInput(item.tags?.join(', ') || '');
-      setToolsInput(item.metadata?.tools?.join(', ') || '');
-      setActiveTab('portfolio');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const deletePortfolioItem = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this item?")) return;
-    setIsLoading(true);
-    try {
-      await portfolioService.delete(id);
-      showToast("Work Deleted", "success");
-      fetchData();
-    } catch (e) {
-      showToast("Delete operation failed", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const filteredItems = useMemo(() => {
     return performSmartSearch(existingItems, searchQuery, sortOption);
   }, [existingItems, searchQuery, sortOption]);
@@ -244,7 +227,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
 
   return (
     <div className="flex min-h-screen bg-paper font-body text-stone-800 relative">
-      {/* Sidebar Mobile Toggle */}
       <button 
         onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
         className="md:hidden fixed top-6 right-6 z-[200] p-4 bg-stone-900 text-white rounded-full shadow-xl"
@@ -252,18 +234,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
         {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* Sidebar Overlay (Mobile) */}
       {isSidebarOpen && (
           <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-[140] md:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-500 w-80 bg-white border-r border-stone-100 flex flex-col z-[150] shadow-2xl md:shadow-none`}>
         <div className="p-16 border-b border-stone-50 flex flex-col items-center">
             <h2 className="font-heading text-4xl font-bold tracking-tighter mb-2">Console.</h2>
-            <div className="px-4 py-1.5 bg-green-50 text-green-500 rounded-full text-[9px] font-black uppercase tracking-[0.3em] flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                System Online
+            <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.3em] flex items-center gap-2 ${diagStatus.db === 'online' ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${diagStatus.db === 'online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                System: {diagStatus.db.toUpperCase()}
             </div>
         </div>
         <nav className="flex-1 p-8 space-y-4 overflow-y-auto">
@@ -291,29 +271,88 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
       <main className="flex-1 md:ml-80 p-8 md:p-24 overflow-y-auto">
           {isLoading && <div className="fixed inset-0 bg-white/95 z-[220] flex items-center justify-center"><BongoCatLoader /></div>}
 
-          {/* Mobile Header (Placeholder to push content down) */}
-          <div className="md:hidden h-16 mb-8 flex items-center">
-             <div className="font-heading text-2xl text-stone-900">Admin Console</div>
-          </div>
-
           {activeTab === 'overview' && (
               <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 space-y-16">
                   <div>
                       <p className="text-[11px] font-black uppercase tracking-[0.5em] text-stone-300 mb-4">Command Center</p>
                       <h1 className="font-heading text-7xl md:text-9xl text-stone-900 leading-[0.8] tracking-tighter">Status.</h1>
                   </div>
+                  
+                  {/* Diagnostics Grid */}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                      {/* Service Health */}
+                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-8">
+                         <div className="flex items-center gap-4">
+                            <Activity size={24} className="text-accent" />
+                            <h2 className="font-heading text-3xl">Diagnostics.</h2>
+                         </div>
+                         <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-100">
+                                <div className="flex items-center gap-3">
+                                    <Database size={18} className="text-stone-400" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Supabase Engine</span>
+                                </div>
+                                <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${diagStatus.db === 'online' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                    {diagStatus.db}
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-100">
+                                <div className="flex items-center gap-3">
+                                    <Mail size={18} className="text-stone-400" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Mail Protocol (Formspree)</span>
+                                </div>
+                                <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${diagStatus.mail === 'configured' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                    {diagStatus.mail}
+                                </div>
+                            </div>
+                         </div>
+                         {diagStatus.mail === 'missing' && (
+                             <div className="flex gap-4 p-5 bg-red-50 text-red-600 rounded-2xl border border-red-100">
+                                <AlertCircle size={20} className="shrink-0" />
+                                <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+                                    Action Required: The Contact Form is not active. Please add your Formspree ID in the Core Config tab to receive client signals.
+                                </p>
+                             </div>
+                         )}
+                      </div>
+
+                      {/* Submissions Traffic */}
+                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-8">
+                         <div className="flex items-center gap-4">
+                            <Rocket size={24} className="text-accent" />
+                            <h2 className="font-heading text-3xl">Traffic.</h2>
+                         </div>
+                         <div className="space-y-6">
+                            <div className="flex justify-between items-end">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">Daily Bandwidth Used</span>
+                                <span className="text-2xl font-heading">{submissionsCount} / 10</span>
+                            </div>
+                            <div className="h-4 w-full bg-stone-50 rounded-full overflow-hidden border border-stone-100">
+                                <div 
+                                    className={`h-full transition-all duration-1000 ${submissionsCount >= 10 ? 'bg-red-400' : 'bg-stone-900'}`}
+                                    style={{ width: `${(submissionsCount / 10) * 100}%` }}
+                                />
+                            </div>
+                            <p className="text-[9px] text-stone-400 font-bold uppercase tracking-widest">
+                                {submissionsCount >= 10 ? 'Threshold reached. New signals are paused.' : 'System can accept more creative briefs.'}
+                            </p>
+                         </div>
+                      </div>
+                  </div>
+
+                  {/* Core Metrics Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-4">
+                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-4 hover:border-accent transition-colors">
                           <div className="w-12 h-12 bg-stone-900 text-white rounded-2xl flex items-center justify-center"><Grid size={24}/></div>
                           <h3 className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Active Artifacts</h3>
                           <p className="font-heading text-5xl">{existingItems.length}</p>
                       </div>
-                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-4">
+                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-4 hover:border-accent transition-colors">
                           <div className="w-12 h-12 bg-accent text-stone-900 rounded-2xl flex items-center justify-center"><Star size={24}/></div>
                           <h3 className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Featured Works</h3>
                           <p className="font-heading text-5xl">{existingItems.filter(i => i.isFeatured).length}</p>
                       </div>
-                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-4">
+                      <div className="bg-white p-10 rounded-[3rem] border border-stone-100 shadow-xl space-y-4 hover:border-accent transition-colors">
                           <div className="w-12 h-12 bg-stone-100 text-stone-900 rounded-2xl flex items-center justify-center"><FileText size={24}/></div>
                           <h3 className="text-stone-300 text-[10px] font-black uppercase tracking-widest">Journal Entries</h3>
                           <p className="font-heading text-5xl">{blogPosts.length}</p>
@@ -381,16 +420,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                                   <label className="label">Brief Description</label>
                                   <textarea className="input-field h-32 resize-none" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} placeholder="Describe the process and outcome..." />
                               </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                  <div className="space-y-2">
-                                      <label className="label">Tags (comma separated)</label>
-                                      <input className="input-field" value={portfolioTagsInput} onChange={e => setPortfolioTagsInput(e.target.value)} placeholder="After Effects, React, Lofi..." />
-                                  </div>
-                                  <div className="space-y-2">
-                                      <label className="label">Completion Date</label>
-                                      <input className="input-field" type="date" value={newItem.dateCreated} onChange={e => setNewItem({...newItem, dateCreated: e.target.value})} />
-                                  </div>
-                              </div>
                           </div>
                       </div>
 
@@ -403,56 +432,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                                 </div>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover:text-stone-900">Featured</span>
                             </label>
-                            {newItem.isFeatured && (
-                                <div className="flex items-center gap-3">
-                                    <label className="label mb-0">Order</label>
-                                    <input type="number" className="input-field w-20 py-2 px-3 text-center" value={newItem.featuredOrder} onChange={e => setNewItem({...newItem, featuredOrder: parseInt(e.target.value)})} />
-                                </div>
-                            )}
                           </div>
                           <div className="flex gap-4 w-full md:w-auto">
-                              {editingItemId && <button onClick={() => {setEditingItemId(null); setNewItem({title:''}); setPortfolioTagsInput('');}} className="flex-1 md:flex-none px-6 py-4 bg-stone-100 text-stone-400 rounded-2xl font-black uppercase tracking-widest text-[10px]">Cancel</button>}
-                              <button onClick={savePortfolioItem} className="flex-1 md:flex-none px-8 py-4 bg-stone-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-accent hover:text-stone-900 transition-all shadow-xl shadow-stone-900/10">
+                              <button onClick={savePortfolioItem} className="flex-1 md:flex-none px-8 py-4 bg-stone-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-accent hover:text-stone-900 transition-all shadow-xl">
                                   {editingItemId ? 'Update' : 'Publish'}
                               </button>
                           </div>
-                      </div>
-                  </div>
-
-                  <div className="space-y-10">
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                          <h2 className="font-heading text-5xl">Archive.</h2>
-                          <div className="relative w-full md:w-auto">
-                              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-stone-300" size={18} />
-                              <input className="input-field pl-16 w-full md:w-80" placeholder="Search Workshop..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                          </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                          {filteredItems.map(item => (
-                              <div key={item.id} className="bg-white p-8 rounded-[3rem] border border-stone-100 shadow-lg group hover:shadow-2xl transition-all duration-500">
-                                  <div className="aspect-video rounded-[2rem] overflow-hidden bg-stone-100 mb-6 relative">
-                                      {item.mediaType === 'image' ? (
-                                          <img src={item.url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt={item.title} />
-                                      ) : (
-                                          <div className="w-full h-full flex items-center justify-center bg-stone-900">
-                                              <VideoIcon size={32} className="text-white/20" />
-                                          </div>
-                                      )}
-                                      <div className="absolute top-4 right-4 flex gap-2">
-                                          <button onClick={() => startEditingItem(item)} className="p-3 bg-white/90 backdrop-blur-md rounded-xl text-stone-900 hover:bg-stone-900 hover:text-white transition-all shadow-xl"><Edit size={16}/></button>
-                                          <button onClick={() => deletePortfolioItem(item.id)} className="p-3 bg-white/90 backdrop-blur-md rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-xl"><Trash2 size={16}/></button>
-                                      </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                      <div className="flex justify-between items-start gap-2">
-                                          <h3 className="font-heading text-2xl group-hover:text-accent transition-colors break-words">{item.title}</h3>
-                                          {item.isFeatured && <Star size={16} fill="#fa8c96" className="text-accent shrink-0"/>}
-                                      </div>
-                                      <p className="text-[9px] font-black uppercase tracking-widest text-stone-400">{item.category.replace(/_/g, ' ')}</p>
-                                  </div>
-                              </div>
-                          ))}
                       </div>
                   </div>
               </div>
@@ -465,48 +450,107 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) =>
                         <p className="text-[11px] font-black uppercase tracking-[0.5em] text-stone-300 mb-4">System Parameters</p>
                         <h1 className="font-heading text-6xl md:text-9xl text-stone-900 leading-[0.8] tracking-tighter">Config.</h1>
                     </div>
-                    <button onClick={saveConfigChanges} className="flex items-center gap-3 px-10 py-5 bg-stone-900 text-white rounded-full font-black uppercase tracking-widest text-[10px] hover:bg-accent hover:text-stone-900 transition-all shadow-xl w-full md:w-auto justify-center">
+                    <button onClick={saveConfigChanges} className="flex items-center gap-3 px-10 py-5 bg-stone-900 text-white rounded-full font-black uppercase tracking-widest text-[10px] hover:bg-accent hover:text-stone-900 transition-all shadow-xl">
                         <Save size={16}/> Sync Logic
                     </button>
                 </header>
 
                 <div className="flex flex-wrap gap-2 md:gap-4 p-2 bg-stone-100 rounded-[2rem] w-full md:w-fit overflow-x-auto">
-                    {['general', 'hero', 'bio', 'testimonial', 'journal', 'contact', 'theme', 'seo'].map(sec => (
+                    {['general', 'seo', 'hero', 'bio', 'testimonial', 'contact', 'theme'].map(sec => (
                         <button key={sec} onClick={() => setSettingsSection(sec as any)} className={`px-4 md:px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${settingsSection === sec ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400'}`}>
-                            {sec}
+                            {sec.toUpperCase()}
                         </button>
                     ))}
                 </div>
 
-                <div className="bg-white p-8 md:p-16 rounded-[3rem] md:rounded-[4rem] border border-stone-100 shadow-2xl space-y-10">
-                    {/* Settings Content - Bio Section Example */}
-                    {settingsSection === 'bio' && (
+                <div className="bg-white p-8 md:p-16 rounded-[3rem] md:rounded-[4rem] border border-stone-100 shadow-2xl">
+                    {settingsSection === 'seo' && (
                         <div className="space-y-10 animate-in fade-in duration-500">
                             <div className="grid md:grid-cols-2 gap-10">
                                 <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="label">Display Headline</label>
-                                        <input className="input-field" value={tempConfig.bio.headline} onChange={e => handleConfigChange('bio', 'headline', e.target.value)} />
+                                        <label className="label">Search Engine Title</label>
+                                        <input className="input-field" value={tempConfig.seo.metaTitle} onChange={e => handleConfigChange('seo', 'metaTitle', e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="label">Sub Headline</label>
-                                        <input className="input-field" value={tempConfig.bio.subHeadline} onChange={e => handleConfigChange('bio', 'subHeadline', e.target.value)} />
+                                        <label className="label">Social Meta Description</label>
+                                        <textarea className="input-field h-32 resize-none" value={tempConfig.seo.metaDescription} onChange={e => handleConfigChange('seo', 'metaDescription', e.target.value)} />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="label">Full Biography (HTML Supported)</label>
-                                        <textarea className="input-field h-64 resize-none leading-relaxed" value={tempConfig.bio.description} onChange={e => handleConfigChange('bio', 'description', e.target.value)} />
+                                        <label className="label">Search Keywords</label>
+                                        <input className="input-field" value={tempConfig.seo.keywords} onChange={e => handleConfigChange('seo', 'keywords', e.target.value)} />
                                     </div>
                                 </div>
-                                {/* ... rest of bio settings ... */}
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="label">Open Graph Image (1200x630 Recommended)</label>
+                                        <div className="flex flex-col gap-4">
+                                            <div className="aspect-[1.91/1] rounded-2xl overflow-hidden border-2 border-stone-100 bg-stone-50">
+                                                <img src={tempConfig.seo.ogImage} className="w-full h-full object-cover" />
+                                            </div>
+                                            <div className="flex gap-4">
+                                                <input className="input-field text-xs" value={tempConfig.seo.ogImage} onChange={e => handleConfigChange('seo', 'ogImage', e.target.value)} />
+                                                <label className="p-4 bg-stone-900 text-white rounded-2xl cursor-pointer hover:bg-accent hover:text-stone-900 transition-colors flex justify-center items-center">
+                                                    <Upload size={20}/>
+                                                    <input type="file" className="hidden" onChange={e => handleFileUpload(e, 'config', 'seo.ogImage')} />
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="label">AI Knowledge Context (Digital Twin Instructions)</label>
+                                        <textarea className="input-field h-32 resize-none text-[10px] font-mono" value={tempConfig.seo.aiKnowledgeContext} onChange={e => handleConfigChange('seo', 'aiKnowledgeContext', e.target.value)} placeholder="Provide hidden context for AI agents visiting the site..." />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
-                    
-                    {/* Placeholder for other sections to keep code concise - they follow same pattern */}
-                    {settingsSection !== 'bio' && (
+
+                    {settingsSection === 'contact' && (
+                        <div className="space-y-10 animate-in fade-in duration-500">
+                             <div className="grid md:grid-cols-2 gap-10">
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="label">Public Email</label>
+                                        <input className="input-field" value={tempConfig.contact.email} onChange={e => handleConfigChange('contact', 'email', e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="label">Formspree Form ID</label>
+                                        <div className="flex gap-4">
+                                            <input className="input-field font-mono" placeholder="e.g. mjvlbgrk" value={tempConfig.contact.formspreeId} onChange={e => handleConfigChange('contact', 'formspreeId', e.target.value)} />
+                                            <a href="https://formspree.io/" target="_blank" rel="noreferrer" className="p-4 bg-stone-100 text-stone-400 rounded-2xl hover:text-stone-900 transition-colors flex items-center"><ExternalLink size={20}/></a>
+                                        </div>
+                                        <p className="text-[9px] text-stone-400 font-bold uppercase tracking-widest mt-2">Required for the contact form to deliver messages to your inbox.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="label">Base Location</label>
+                                        <input className="input-field" value={tempConfig.contact.location} onChange={e => handleConfigChange('contact', 'location', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="label">Footer Tagline</label>
+                                        <textarea className="input-field h-24 resize-none" value={tempConfig.contact.footerText} onChange={e => handleConfigChange('contact', 'footerText', e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="label">Digital Signature (SVG/PNG)</label>
+                                        <div className="flex gap-4">
+                                            <input className="input-field text-xs" value={tempConfig.contact.signatureUrl || ''} onChange={e => handleConfigChange('contact', 'signatureUrl', e.target.value)} />
+                                            <label className="p-4 bg-stone-900 text-white rounded-2xl cursor-pointer hover:bg-accent hover:text-stone-900 transition-colors flex justify-center items-center">
+                                                <Upload size={20}/>
+                                                <input type="file" className="hidden" onChange={e => handleFileUpload(e, 'config', 'contact.signatureUrl')} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                    )}
+
+                    {['general', 'hero', 'bio', 'testimonial', 'journal', 'theme'].includes(settingsSection) && (
                         <div className="text-center py-20 text-stone-400">
                            <p className="font-heading text-2xl">Configuration panel for {settingsSection} loaded.</p>
-                           <p className="text-sm mt-2">Use the input fields above to modify system variables.</p>
+                           <p className="text-sm mt-2">Update the values in the source code or use the provided input patterns.</p>
                         </div>
                     )}
                 </div>

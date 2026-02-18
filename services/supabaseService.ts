@@ -9,7 +9,21 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ... (previous mappers remain the same)
+export const contactService = {
+  getTodayCount: async (): Promise<number> => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const { count, error } = await supabase
+      .from('contact_submissions_log')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString());
+    return error ? 0 : (count || 0);
+  },
+  logSubmission: async () => {
+    const { error } = await supabase.from('contact_submissions_log').insert({});
+    if (error) throw error;
+  }
+};
 
 export const testimonialService = {
   getAll: async (): Promise<Testimonial[]> => {
@@ -29,21 +43,18 @@ export const testimonialService = {
     if (error) throw error;
   },
   submitWithVoucher: async (code: string, testimonial: Partial<Testimonial>) => {
-    // 1. Verify and Burn Voucher
     const { data: voucher, error: vError } = await supabase.from('testimonial_vouchers').select('*').eq('code', code).eq('is_used', false).single();
     if (vError || !voucher) throw new Error("Invalid or already used security code.");
 
-    // 2. Mark voucher as used
     await supabase.from('testimonial_vouchers').update({ is_used: true }).eq('id', voucher.id);
 
-    // 3. Insert Testimonial
     const { error: tError } = await supabase.from('testimonials').insert({
         client_name: testimonial.client_name,
         client_role: testimonial.client_role,
         content: testimonial.content,
         rating: testimonial.rating,
         voucher_used: code,
-        is_approved: false // Admin must approve
+        is_approved: false 
     });
     if (tError) throw tError;
   }
@@ -64,8 +75,6 @@ export const voucherService = {
     await supabase.from('testimonial_vouchers').delete().eq('id', id);
   }
 };
-
-// ... (rest of configService, portfolioService, blogService, authService remain the same)
 
 const mapItemFromDB = (item: any): PortfolioItem => ({
   ...item,
@@ -160,13 +169,6 @@ export const portfolioService = {
   getAll: async (): Promise<PortfolioItem[]> => {
     const { data, error } = await supabase.from('portfolio_items').select('*').order('created_at', { ascending: false });
     const dbItems = error ? [] : data.map(mapItemFromDB);
-    
-    // Merge DB items with Seed items
-    // If an item exists in DB (by logic of user adding it), we prioritize DB, but here we just combine them.
-    // In a real app, you might only want seed data if DB is empty, or you'd script the import.
-    // For this portfolio showcase, we combine them so the user sees all assets immediately.
-    
-    // Create a map to deduplicate by ID if necessary, though seed IDs are distinct 'seed-'
     const allItems = [...dbItems, ...SEED_PORTFOLIO_ITEMS];
     return allItems;
   },
@@ -186,8 +188,6 @@ export const portfolioService = {
     if (error) throw error;
   },
   delete: async (id: string): Promise<void> => {
-    // If it's a seed item, we can't delete it from DB, but we could filter it out in local state if we implemented that logic.
-    // For now, only DB items can be deleted via this service.
     if (id.startsWith('seed-')) {
        console.warn("Cannot delete seed data from database.");
        return;

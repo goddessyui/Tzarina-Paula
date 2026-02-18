@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Quote, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useConfig } from '../contexts/ConfigContext';
@@ -20,7 +21,6 @@ export const TestimonialSection: React.FC<TestimonialSectionProps> = ({ scrollY 
   const next = () => setCurrentIndex((prev) => (prev + 1) % testimonials.length);
   const prev = () => setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
 
-  // Fallback to config if no DB testimonials exist
   const current = testimonials.length > 0 ? testimonials[currentIndex] : {
       content: config.testimonial.quote,
       client_name: config.testimonial.author,
@@ -41,7 +41,7 @@ export const TestimonialSection: React.FC<TestimonialSectionProps> = ({ scrollY 
             <Quote size={600} />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 md:px-16 text-center relative z-10">
+        <div className="container-responsive max-w-7xl text-center relative z-10">
             <div className="flex justify-center mb-12">
                 <div className="flex gap-1 text-accent">
                     {[...Array(5)].map((_, i) => (

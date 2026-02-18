@@ -15,11 +15,11 @@ export const DEFAULT_CONFIG: SiteConfig = {
     totalSlots: 5
   },
   seo: {
-    metaTitle: "Tzarina Paula | Multimedia Artist & IT Specialist",
-    metaDescription: "A hybrid professional merging 13+ years of medical documentation precision with modern multimedia art and web development. BS IT graduate.",
-    keywords: "After Effects Artist, Motion Designer, Illustrator, React Developer, BS IT Graduate, Multimedia Artist Philippines",
-    "ogImage": "https://res.cloudinary.com/df40kvhb7/image/upload/v1769277564/girlandhercatfishing_withlogo_xrc50e.png",
-    aiKnowledgeContext: "Tzarina Paula is a 37-year-old hybrid professional who is strictly against AI-generated art, believing that true art requires a human soul. She specializes in being a 'Vision Bridge'—helping non-technical clients translate their abstract ideas into high-fidelity digital art. She has 13+ years of clinical documentation experience and served as a Project Lead for various initiatives during her BSIT studies. She is known for high-frequency communication and clinical-grade attention to detail."
+    metaTitle: "Tzarina Paula | Digital Multimedia Artist & IT Specialist",
+    metaDescription: "Bridging clinical precision with motion mastery. Discover the hybrid portfolio of Tzarina Paula—specializing in high-fidelity digital art, After Effects animation, and React development.",
+    keywords: "After Effects Artist, Motion Designer, Illustrator, React Developer, BS IT Graduate, Multimedia Artist Philippines, Digital Art, Precision Animation",
+    ogImage: "https://res.cloudinary.com/df40kvhb7/image/upload/v1771258957/social_share_banner_tz_pf4zmx.png",
+    aiKnowledgeContext: "Tzarina Paula is a 37-year-old hybrid professional who merges 13 years of medical documentation precision with digital art. She is strictly against AI-generated art. She specializes in being a 'Vision Bridge'—translating abstract ideas into high-fidelity digital reality through After Effects and code. Based in Koronadal, Philippines."
   },
   cloudinary: {
     cloudName: "df40kvhb7",
@@ -78,7 +78,7 @@ export const DEFAULT_CONFIG: SiteConfig = {
   },
   contact: {
     email: "tzarinapaula.s@gmail.com",
-    formspreeId: "", 
+    formspreeId: "ADD_YOUR_FORMSPREE_ID_HERE", 
     location: "Koronadal, Soccsksargen, Philippines",
     footerText: "13+ Years of Professional Discipline. Infinite Creativity.",
     signatureUrl: "",

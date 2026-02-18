@@ -29,8 +29,6 @@ export const BioSection: React.FC = () => {
 
     useEffect(() => {
         const mm = gsap.matchMedia();
-        
-        // Desktop: Pin the left profile card
         mm.add("(min-width: 1024px)", () => {
              ScrollTrigger.create({
                 trigger: containerRef.current,
@@ -38,12 +36,11 @@ export const BioSection: React.FC = () => {
                 end: "bottom bottom",
                 pin: leftColRef.current,
                 pinSpacing: false,
-                scrub: true // smooth pinning
+                scrub: true
             });
         });
 
         const ctx = gsap.context(() => {
-            // Animate Skill Bars
             const tl = gsap.timeline({
                 scrollTrigger: {
                     trigger: containerRef.current,
@@ -58,7 +55,6 @@ export const BioSection: React.FC = () => {
                   .fromTo(creativeBarRef.current, { width: "0%" }, { width: "88%", ease: "power2.out" }, "<");
             }
 
-            // Animate Paragraphs
             const paragraphs = gsap.utils.toArray('.bio-paragraph');
             paragraphs.forEach((p: any) => {
                 gsap.fromTo(p, 
@@ -92,11 +88,10 @@ export const BioSection: React.FC = () => {
             ref={containerRef} 
             className="relative w-full bg-paper py-12 md:py-24 lg:py-32 overflow-hidden"
         >
-            <div className="container-max relative z-10">
+            <div className="container-responsive max-w-7xl relative z-10">
                 <div className="flex flex-col lg:grid lg:grid-cols-12 gap-12 lg:gap-24 items-start">
                     
                     {/* LEFT COLUMN: PROFILE CARD */}
-                    {/* Mobile: Full width, static. Desktop: Col-span-5, Pinned. */}
                     <div ref={leftColRef} className="w-full lg:col-span-5 relative z-20 flex flex-col">
                         <div className={`
                             relative overflow-hidden transition-all duration-700 w-full
@@ -105,7 +100,6 @@ export const BioSection: React.FC = () => {
                                 : 'bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl border border-stone-100'
                             }
                         `}>
-                            {/* Card Header Decoration */}
                             <div className="h-3 bg-stone-900 w-full flex items-center justify-between px-4">
                                 <div className="flex gap-1.5">
                                     <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -114,20 +108,13 @@ export const BioSection: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Image Container */}
                             <div className="relative aspect-[4/5] md:aspect-square lg:aspect-[4/5] xl:aspect-square group overflow-hidden bg-stone-200">
                                 <img 
                                     src={bio.profileImage} 
                                     alt="Profile" 
-                                    className={`
-                                        w-full h-full object-cover transition-all duration-1000
-                                        ${isLogic ? 'grayscale contrast-125' : 'grayscale-0'}
-                                        group-hover:scale-105
-                                    `}
+                                    className={`w-full h-full object-cover transition-all duration-1000 ${isLogic ? 'grayscale contrast-125' : 'grayscale-0'} group-hover:scale-105`}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-stone-900/10 to-stone-900/80 pointer-events-none" />
-                                
-                                {/* Overlay Text on Image */}
                                 <div className="absolute bottom-6 left-6 right-6 text-white">
                                     <div className="flex justify-between items-end">
                                         <div>
@@ -142,7 +129,6 @@ export const BioSection: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Stats / Skills Section */}
                             <div className="p-6 md:p-8 space-y-8">
                                 <div className="flex items-center gap-4">
                                     <div className={`p-3 rounded-2xl ${isLogic ? 'bg-stone-200' : 'bg-accent/10 text-accent'}`}>
@@ -154,7 +140,6 @@ export const BioSection: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Bars */}
                                 <div className="space-y-6">
                                     <div className="space-y-2">
                                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-stone-400">
@@ -179,10 +164,7 @@ export const BioSection: React.FC = () => {
                                     </div>
                                 </div>
                                 
-                                <button className={`
-                                    w-full py-4 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all
-                                    ${isLogic ? 'bg-stone-900 text-white hover:bg-stone-700' : 'bg-white border-2 border-stone-100 hover:border-accent hover:text-accent text-stone-900 shadow-lg'}
-                                `}>
+                                <button className={`w-full py-4 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all ${isLogic ? 'bg-stone-900 text-white hover:bg-stone-700' : 'bg-white border-2 border-stone-100 hover:border-accent hover:text-accent text-stone-900 shadow-lg'}`}>
                                     <Download size={16} /> Download Full CV
                                 </button>
                             </div>
@@ -192,8 +174,6 @@ export const BioSection: React.FC = () => {
                     {/* RIGHT COLUMN: CONTENT */}
                     <div ref={rightColRef} className="w-full lg:col-span-7 flex flex-col justify-center pt-0 lg:py-12">
                         <div className="space-y-16 lg:space-y-24">
-                            
-                            {/* Headline Block */}
                             <div className="space-y-6">
                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-stone-100 rounded-full text-[10px] font-bold uppercase tracking-widest text-stone-500">
                                     <BrainCircuit size={14} />
@@ -205,7 +185,6 @@ export const BioSection: React.FC = () => {
                                 </h2>
                             </div>
 
-                            {/* Text Blocks */}
                             <div className="space-y-12">
                                 <div className="bio-paragraph border-l-4 border-stone-200 pl-6 md:pl-8 space-y-4">
                                     <h3 className="font-heading text-2xl md:text-3xl text-stone-800">The Pivot.</h3>
@@ -229,17 +208,10 @@ export const BioSection: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Alert Box */}
                             <div className="bio-paragraph relative overflow-hidden group">
-                                <div className={`
-                                    p-6 md:p-10 rounded-[2rem] border-2 transition-all duration-500 relative z-10
-                                    ${isLogic ? 'bg-stone-50 border-stone-200' : 'bg-stone-900 border-stone-900 text-white'}
-                                `}>
+                                <div className={`p-6 md:p-10 rounded-[2rem] border-2 transition-all duration-500 relative z-10 ${isLogic ? 'bg-stone-50 border-stone-200' : 'bg-stone-900 border-stone-900 text-white'}`}>
                                     <div className="flex flex-col sm:flex-row items-start gap-6">
-                                        <div className={`
-                                            p-4 rounded-full shrink-0 animate-pulse
-                                            ${isLogic ? 'bg-red-100 text-red-600' : 'bg-accent text-stone-900'}
-                                        `}>
+                                        <div className={`p-4 rounded-full shrink-0 animate-pulse ${isLogic ? 'bg-red-100 text-red-600' : 'bg-accent text-stone-900'}`}>
                                             <ShieldAlert size={32} />
                                         </div>
                                         <div className="space-y-4">
@@ -250,7 +222,6 @@ export const BioSection: React.FC = () => {
                                             <p className={`font-mono text-xs md:text-sm leading-relaxed ${isLogic ? 'text-stone-500' : 'text-stone-400'}`}>
                                                 SYSTEM NOTICE: This portfolio contains 0% AI-generated imagery. 
                                                 I believe art is a projection of the human soul. Every piece here is crafted by hand, heart, and human error.
-                                                Prioritizing the inimitable spark of creation that no algorithm can replicate.
                                             </p>
                                             <div className="flex items-center gap-2 pt-2">
                                                 <Fingerprint size={16} className={isLogic ? 'text-stone-400' : 'text-stone-500'} />
@@ -260,18 +231,10 @@ export const BioSection: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Background Elements */}
-                            <div className="hidden lg:flex justify-end opacity-20 select-none pointer-events-none absolute bottom-0 right-0">
-                                <Zap size={120} />
-                            </div>
-
                         </div>
                     </div>
                 </div>
             </div>
-            
-            {/* Background Texture Overlay */}
             <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]" />
         </section>
     );

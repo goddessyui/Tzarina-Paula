@@ -18,12 +18,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
   const optimizeUrl = (url: string | undefined) => {
     if (!url) return '';
     if (url.includes('cloudinary.com')) {
-      // If it's a video, add optimization parameters including auto format (f_auto) 
-      // which handles transparency (alpha) automatically for WebM/MP4
       if (url.match(/\.(mp4|mov|webm|ogv)$|video\/upload/)) {
         return url.replace('/upload/', '/upload/f_auto,q_auto,vc_auto/');
       }
-      // If it's an image
       return url.replace('/upload/', '/upload/f_auto,q_auto/');
     }
     return url;
@@ -56,54 +53,33 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
   return (
     <section ref={containerRef} className="relative w-full h-screen min-h-[700px] flex items-center overflow-hidden transition-colors duration-1000">
         
-        {/* PARALLAX MULTI-LAYER STACK */}
+        {/* PARALLAX LAYER STACK */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
-            
-            {/* 1. BACKGROUND LAYER (Distant Environment) */}
+            {/* BACKGROUND LAYER */}
             <div 
               className={`absolute inset-0 transition-all duration-1000 ease-out opacity-30 
                 ${gameState.mode === 'logic' ? 'grayscale brightness-110' : 'sepia-[0.1] contrast-105'}`}
               style={{ transform: `translate3d(${mousePos.x * -15}px, ${mousePos.y * -15}px, 0) scale(1.05)` }}
             >
                 {config.hero.backgroundType === 'video' ? (
-                  <video 
-                    src={optimizeUrl(config.hero.backgroundImage)} 
-                    autoPlay 
-                    muted 
-                    loop 
-                    playsInline 
-                    preload="auto"
-                    className="w-full h-full object-cover" 
-                  />
+                  <video src={optimizeUrl(config.hero.backgroundImage)} autoPlay muted loop playsInline preload="auto" className="w-full h-full object-cover" />
                 ) : (
-                  <img 
-                    src={optimizeUrl(config.hero.backgroundImage)} 
-                    alt="" 
-                    className="w-full h-full object-cover" 
-                  />
+                  <img src={optimizeUrl(config.hero.backgroundImage)} alt="" className="w-full h-full object-cover" />
                 )}
             </div>
 
-            {/* 2. MIDGROUND LAYER (Animated Earth) */}
+            {/* MIDGROUND LAYER */}
             {config.hero.midgroundVideo && (
               <div 
                 className={`absolute inset-0 z-10 flex items-center justify-center transition-all duration-1000
                   ${gameState.mode === 'logic' ? 'grayscale opacity-10 mix-blend-screen' : 'opacity-80 mix-blend-screen'}`}
                 style={{ transform: `translate3d(${mousePos.x * -35}px, ${mousePos.y * -35}px, 0) scale(1.1)` }}
               >
-                <video 
-                  src={optimizeUrl(config.hero.midgroundVideo)} 
-                  autoPlay 
-                  muted 
-                  loop 
-                  playsInline 
-                  preload="auto"
-                  className="w-full h-full object-contain md:scale-90"
-                />
+                <video src={optimizeUrl(config.hero.midgroundVideo)} autoPlay muted loop playsInline preload="auto" className="w-full h-full object-contain md:scale-90" />
               </div>
             )}
 
-            {/* 3. FOREGROUND LAYER (Animated Character) */}
+            {/* FOREGROUND LAYER */}
             {config.hero.foregroundVideo && (
               <div 
                 className={`absolute inset-0 z-20 flex items-center justify-center transition-all duration-1000
@@ -113,15 +89,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
                     filter: gameState.mode === 'creative' ? 'drop-shadow(0 30px 60px rgba(0,0,0,0.3))' : 'none'
                 }}
               >
-                <video 
-                  src={optimizeUrl(config.hero.foregroundVideo)} 
-                  autoPlay 
-                  muted 
-                  loop 
-                  playsInline 
-                  preload="auto"
-                  className="h-[120%] w-auto object-contain animate-float-hero"
-                />
+                <video src={optimizeUrl(config.hero.foregroundVideo)} autoPlay muted loop playsInline preload="auto" className="h-[120%] w-auto object-contain animate-float-hero" />
               </div>
             )}
             
@@ -133,8 +101,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
             )}
         </div>
 
-        {/* HERO CONTENT */}
-        <div className="container-max relative z-40 w-full pointer-events-none">
+        {/* HERO CONTENT - Standardized Padding */}
+        <div className="container-responsive max-w-7xl relative z-40 w-full pointer-events-none">
             <div className="max-w-4xl space-y-10 pointer-events-auto">
                 <div className="flex items-center gap-4 opacity-60">
                     {gameState.mode === 'logic' ? <Cpu size={14} /> : <Wand2 size={14} className="text-accent" />}
@@ -147,7 +115,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onNavigate }) => {
                     <span ref={el => el && (wordsRef.current[2] = el)} className={`block ${gameState.mode === 'creative' ? 'text-accent' : ''}`}>{config.hero.headlineWord3}</span>
                 </h1>
 
-                <div className="flex flex-col sm:flex-row items-center gap-8 pt-10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 pt-10">
                     <button 
                         onClick={(e) => { addXP(100, e.clientX, e.clientY); onNavigate?.('contact'); }}
                         className={`group px-12 py-6 flex items-center gap-6 transition-all duration-500 shadow-2xl active:scale-95 no-logic

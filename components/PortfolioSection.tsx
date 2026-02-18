@@ -39,22 +39,11 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({ items, scrol
 
   const paginatedItems = useMemo(() => filteredItems.slice(0, visibleCount), [filteredItems, visibleCount]);
 
-  // Robust Height Observer:
-  // Monitors the exact height of this section. If it changes (due to images loading, 
-  // "Load More", or filtering), it forces GSAP to recalculate start/end points 
-  // for all subsequent pinned sections (like Bio).
   useEffect(() => {
     if (!sectionRef.current) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      ScrollTrigger.refresh();
-    });
-
+    const resizeObserver = new ResizeObserver(() => ScrollTrigger.refresh());
     resizeObserver.observe(sectionRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
+    return () => resizeObserver.disconnect();
   }, []);
 
   const getCount = (tabId: FilterTab) => {
@@ -78,7 +67,7 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({ items, scrol
         
         {/* 1. SELECTED WORKS (SPOTLIGHT) */}
         {featuredItems.length > 0 && activeTab === 'all' && (
-            <section className="max-w-7xl mx-auto px-6 md:px-16 mb-36 w-full flex-none">
+            <section className="container-responsive max-w-7xl mb-36 w-full flex-none">
                 <div 
                     className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-20 will-change-transform"
                     style={{ transform: `translateY(${Math.max(0, (scrollY - 200) * -0.05)}px)` }}
@@ -105,7 +94,7 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({ items, scrol
 
         {/* 2. ARCHIVE SECTION */}
         <section className="relative w-full flex-auto flex flex-col">
-            <div className="max-w-7xl mx-auto px-6 md:px-16 w-full flex-none">
+            <div className="container-responsive max-w-7xl w-full flex-none">
                 <div className="mb-20 flex justify-center">
                     <div className="inline-flex flex-wrap justify-center items-center gap-2 p-2 bg-white rounded-full border border-stone-200/50 shadow-lg shadow-stone-200/5">
                         {filterOptions.map((option) => {
@@ -136,7 +125,7 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({ items, scrol
             <div className="w-full min-h-[400px] flex-auto">
                 {filteredItems.length > 0 ? (
                     <div key={activeTab} className="animate-in fade-in slide-in-from-bottom-10 duration-1000 flex flex-col h-full">
-                        <div className="max-w-7xl mx-auto px-6 md:px-16 w-full">
+                        <div className="container-responsive max-w-7xl w-full">
                             <PortfolioGrid items={paginatedItems} />
                         </div>
                         
@@ -149,7 +138,7 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({ items, scrol
                         )}
                     </div>
                 ) : (
-                    <div className="max-w-7xl mx-auto px-6 md:px-16 text-center py-32 text-stone-300">
+                    <div className="container-responsive max-w-7xl text-center py-32 text-stone-300">
                         <p className="font-body italic text-xl font-light tracking-wide">Workspace is currently occupied. Content arriving soon.</p>
                     </div>
                 )}

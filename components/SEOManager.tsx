@@ -18,7 +18,7 @@ export const SEOManager: React.FC<SEOProps> = ({ override }) => {
   const { config } = useConfig();
 
   useEffect(() => {
-    const { seo, general, contact } = config;
+    const { seo, general, contact, theme } = config;
     if (!seo) return;
 
     // Determine effective values (Override > Config)
@@ -31,50 +31,52 @@ export const SEOManager: React.FC<SEOProps> = ({ override }) => {
     // 1. Basic Meta Tags
     document.title = title;
 
-    const setMeta = (name: string, content: string) => {
+    const setMeta = (attr: string, attrVal: string, content: string) => {
       if (!content) return;
-      let el = document.querySelector(`meta[name="${name}"]`);
+      let el = document.querySelector(`meta[${attr}="${attrVal}"]`);
       if (!el) {
         el = document.createElement('meta');
-        el.setAttribute('name', name);
+        el.setAttribute(attr, attrVal);
         document.head.appendChild(el);
       }
       el.setAttribute('content', content);
     };
 
-    setMeta('description', description);
-    setMeta('keywords', keywords);
-    setMeta('author', override?.author || general.appName);
-    setMeta('robots', 'index, follow');
+    setMeta('name', 'description', description);
+    setMeta('name', 'keywords', keywords);
+    setMeta('name', 'author', override?.author || general.appName);
+    setMeta('name', 'robots', 'index, follow');
+    setMeta('name', 'theme-color', theme.colorAccent || '#fa8c96');
 
-    // 2. OpenGraph / Social
+    // 2. OpenGraph / Social (Facebook, LinkedIn, Discord)
     const ogProps = [
       { property: 'og:title', content: title },
       { property: 'og:description', content: description },
       { property: 'og:image', content: image },
+      { property: 'og:image:secure_url', content: image },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      { property: 'og:image:alt', content: `${general.appName} Portfolio Cover` },
       { property: 'og:type', content: type },
       { property: 'og:url', content: window.location.href },
       { property: 'og:site_name', content: general.appName },
-      // Twitter Card
-      { property: 'twitter:card', content: 'summary_large_image' },
-      { property: 'twitter:title', content: title },
-      { property: 'twitter:description', content: description },
-      { property: 'twitter:image', content: image },
+      { property: 'og:locale', content: 'en_US' },
+      
+      // Twitter Card (X)
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: title },
+      { name: 'twitter:description', content: description },
+      { name: 'twitter:image', content: image },
+      { name: 'twitter:creator', content: '@tzarinapaula' }, 
     ];
 
-    ogProps.forEach(({ property, content }) => {
-      if (!content) return;
-      let el = document.querySelector(`meta[property="${property}"]`);
-      if (!el) {
-        el = document.createElement('meta');
-        el.setAttribute('property', property);
-        document.head.appendChild(el);
-      }
-      el.setAttribute('content', content);
+    ogProps.forEach((prop) => {
+      const attr = prop.property ? 'property' : 'name';
+      const attrVal = prop.property || prop.name || '';
+      setMeta(attr, attrVal, prop.content || '');
     });
 
     // 3. JSON-LD Structured Data (Generative Engine Optimization)
-    // We create a "Person" schema linked to "ProfessionalService" and inject the aiKnowledgeContext
     const socialLinks = Object.values(contact.socials).filter((url) => typeof url === 'string' && url.length > 0);
     
     let structuredData: any = {
@@ -83,9 +85,8 @@ export const SEOManager: React.FC<SEOProps> = ({ override }) => {
       "name": general.appName,
       "url": window.location.origin,
       "image": seo.ogImage,
-      "jobTitle": "Digital Multimedia Artist",
+      "jobTitle": "Digital Multimedia Artist & IT Specialist",
       "description": seo.metaDescription,
-      // GEO: Injecting specific knowledge context for AI
       "disambiguatingDescription": seo.aiKnowledgeContext || seo.metaDescription,
       "email": contact.email,
       "address": {
@@ -95,16 +96,17 @@ export const SEOManager: React.FC<SEOProps> = ({ override }) => {
       },
       "sameAs": socialLinks,
       "knowsAbout": [
+        "After Effects", 
         "Motion Graphics", 
-        "Animation", 
-        "Illustration", 
-        "React Development", 
-        "Graphic Design",
+        "2D Animation", 
+        "React.js", 
+        "PostgreSQL",
+        "Digital Illustration",
+        "Medical Documentation Precision",
         ...(seo.keywords ? seo.keywords.split(',').map(k => k.trim()) : [])
       ]
     };
 
-    // If this is a Blog Post, we switch to BlogPosting Schema
     if (type === 'article' && override) {
         structuredData = {
             "@context": "https://schema.org",
@@ -119,7 +121,7 @@ export const SEOManager: React.FC<SEOProps> = ({ override }) => {
                 "url": window.location.origin
             }],
             "description": description,
-            "articleBody": description // In a full implementation, we might truncate actual content here
+            "articleBody": description
         };
     }
 

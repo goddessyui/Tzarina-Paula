@@ -29,11 +29,8 @@ export const BlogPage: React.FC<BlogPageProps> = ({ onNavigate }) => {
     fetchPosts();
   }, []);
 
-  if (loading) {
-    return <BongoCatLoader />;
-  }
+  if (loading) return <BongoCatLoader />;
 
-  // High-End Editorial Post View
   if (activePost) {
     return (
         <div className="min-h-screen bg-paper pt-36 pb-24 relative">
@@ -46,8 +43,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ onNavigate }) => {
                 tags: activePost.tags
             }} />
             
-            {/* Context Header */}
-            <div className="max-w-4xl mx-auto px-8 md:px-16 mb-16 flex justify-between items-center">
+            <div className="container-responsive max-w-4xl mb-16 flex justify-between items-center">
                 <button 
                     onClick={() => setActivePost(null)}
                     className="flex items-center gap-4 text-stone-400 hover:text-stone-900 transition-all uppercase tracking-[0.25em] text-[9px] font-bold group"
@@ -63,7 +59,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ onNavigate }) => {
                 </div>
             </div>
 
-            <article className="max-w-4xl mx-auto px-8 md:px-16">
+            <article className="container-responsive max-w-4xl">
                 <header className="mb-20 text-center">
                     <div className="flex justify-center items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-accent mb-8">
                          <span>{new Date(activePost.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -111,7 +107,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ onNavigate }) => {
                 <footer className="mt-24 pt-16 border-t border-stone-100 flex flex-col md:flex-row justify-between items-start gap-12">
                      <div className="max-w-md">
                         <h4 className="font-heading text-3xl text-stone-900 mb-4 tracking-tight">Enjoyed the reading?</h4>
-                        <p className="text-stone-500 font-body text-base leading-relaxed mb-8">I publish thoughts on the intersection of design and precision once a month. Stay in the loop.</p>
+                        <p className="text-stone-500 font-body text-base leading-relaxed mb-8">I publish thoughts on the intersection of design and precision once a month.</p>
                         <button onClick={() => onNavigate('contact')} className="bg-stone-900 text-white px-8 py-4 rounded-full font-bold text-[9px] uppercase tracking-[0.2em] hover:bg-accent hover:text-stone-900 transition-all shadow-xl shadow-stone-200">Connect with Tzarina</button>
                      </div>
                      <div className="w-full md:w-56 aspect-square bg-stone-50 rounded-[2rem] flex items-center justify-center border border-stone-100 p-8 grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-700">
@@ -123,10 +119,9 @@ export const BlogPage: React.FC<BlogPageProps> = ({ onNavigate }) => {
     );
   }
 
-  // Editorial Index View
   return (
     <div className="min-h-screen pt-36 pb-24 relative bg-paper">
-      <header className="max-w-7xl mx-auto px-8 md:px-16 text-center mb-24">
+      <header className="container-responsive max-w-7xl text-center mb-24">
         <span className="text-accent text-xs font-bold uppercase tracking-[0.3em] mb-8 block">The Creative Log</span>
         <h1 className="font-heading text-6xl md:text-[8rem] text-stone-900 leading-[0.8] tracking-tight mb-12">Journal.</h1>
         <p className="text-stone-400 font-body text-lg md:text-2xl font-light tracking-wide max-w-2xl mx-auto leading-tight italic">
@@ -134,7 +129,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ onNavigate }) => {
         </p>
       </header>
 
-      <div className="max-w-7xl mx-auto px-8 md:px-16">
+      <div className="container-responsive max-w-7xl">
         {posts.length > 0 ? (
           <div className="grid grid-cols-1 gap-24">
             {posts.map((post, index) => (
@@ -159,21 +154,10 @@ export const BlogPage: React.FC<BlogPageProps> = ({ onNavigate }) => {
                             <span className="text-stone-400">{post.geoTag}</span>
                         </div>
                         
-                        <h2 
-                            className="font-heading text-4xl md:text-5xl text-stone-900 mb-6 leading-[1] tracking-tight cursor-pointer hover:text-accent transition-colors"
-                            onClick={() => setActivePost(post)}
-                        >
-                            {post.title}
-                        </h2>
-                        
-                        <p className="font-body text-stone-500 text-base md:text-lg leading-relaxed font-light mb-10 line-clamp-3">
-                            {post.excerpt}
-                        </p>
+                        <h2 className="font-heading text-4xl md:text-5xl text-stone-900 mb-6 leading-[1] tracking-tight cursor-pointer hover:text-accent transition-colors" onClick={() => setActivePost(post)}>{post.title}</h2>
+                        <p className="font-body text-stone-500 text-base md:text-lg leading-relaxed font-light mb-10 line-clamp-3">{post.excerpt}</p>
 
-                        <button 
-                            onClick={() => setActivePost(post)}
-                            className="flex items-center gap-5 group/btn"
-                        >
+                        <button onClick={() => setActivePost(post)} className="flex items-center gap-5 group/btn">
                             <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-stone-900 border-b-2 border-stone-900 pb-1 group-hover/btn:border-accent group-hover/btn:text-accent transition-colors">Read Article</span>
                             <div className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center text-stone-300 group-hover/btn:bg-accent group-hover/btn:border-accent group-hover/btn:text-stone-900 transition-all group-hover/btn:translate-x-2">
                                 <ArrowRight size={16} />
